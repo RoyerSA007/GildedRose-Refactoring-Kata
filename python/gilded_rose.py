@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-# 1. Extracción de Constantes (Globales para fácil acceso en toda la lógica)
+# 1. Constantes
 AGED_BRIE = "Aged Brie"
 SULFURAS = "Sulfuras, Hand of Ragnaros"
 BACKSTAGE_PASSES = "Backstage passes to a TAFKAL80ETC concert"
+CONJURED = "Conjured Mana Cake"
 
 
 class ItemUpdater:
@@ -12,28 +13,27 @@ class ItemUpdater:
         self.item = item
 
     def update(self):
-        """Método de orquestación (Template Method simplificado)"""
         self.update_quality()
         self.update_sell_in()
         if self.item.sell_in < 0:
             self.handle_expired()
 
     def update_quality(self):
-        """Lógica por defecto para ítems normales"""
-        if self.item.quality > 0:
-            self.item.quality -= 1
+        self._decrease_quality(1)
 
     def update_sell_in(self):
         self.item.sell_in -= 1
 
     def handle_expired(self):
-        if self.item.quality > 0:
-            self.item.quality -= 1
+        self._decrease_quality(1)
 
     def _increase_quality(self):
-        """Método utilitario privado para subclases"""
         if self.item.quality < 50:
             self.item.quality += 1
+
+    def _decrease_quality(self, amount):
+        """Resta calidad asegurando que no baje de 0."""
+        self.item.quality = max(0, self.item.quality - amount)
 
 
 class AgedBrieUpdater(ItemUpdater):
@@ -46,8 +46,7 @@ class AgedBrieUpdater(ItemUpdater):
 
 class SulfurasUpdater(ItemUpdater):
     def update(self):
-        # Cláusula de guarda definitiva: No hace nada
-        pass
+        pass  # Sulfuras es inmutable
 
 
 class BackstagePassUpdater(ItemUpdater):
@@ -62,19 +61,25 @@ class BackstagePassUpdater(ItemUpdater):
         self.item.quality = 0
 
 
+class ConjuredItemUpdater(ItemUpdater):
+    """Degrada la calidad el doble de rápido que un ítem normal."""
+    def update_quality(self):
+        self._decrease_quality(2)
+
+    def handle_expired(self):
+        self._decrease_quality(2)
+
+
 class NormalItemUpdater(ItemUpdater):
-    """Mantiene el comportamiento base de ItemUpdater"""
     pass
 
 
 class UpdaterFactory:
-    """Fabrica la estrategia adecuada con un registro centralizado."""
-    
-    # Registro que mapea nombres de ítems a sus clases actualizadoras
     _registry = {
         AGED_BRIE: AgedBrieUpdater,
         SULFURAS: SulfurasUpdater,
-        BACKSTAGE_PASSES: BackstagePassUpdater
+        BACKSTAGE_PASSES: BackstagePassUpdater,
+        CONJURED: ConjuredItemUpdater  # Registro de la nueva clase
     }
 
     @classmethod
@@ -89,12 +94,10 @@ class GildedRose(object):
 
     def update_quality(self):
         for item in self.items:
-            # Delegación total: GildedRose ya no conoce las reglas del negocio
             UpdaterFactory.for_item(item).update()
 
 
 class Item:
-    """Restricción: No modificada."""
     def __init__(self, name, sell_in, quality):
         self.name = name
         self.sell_in = sell_in
