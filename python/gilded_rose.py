@@ -8,9 +8,12 @@ CONJURED = "Conjured Mana Cake"
 
 
 class ItemUpdater:
-    """Clase base (Estrategia) para la actualización de ítems."""
+    """Clase base (Estrategia). Por defecto para ítems normales."""
+    
     def __init__(self, item):
         self.item = item
+        # Factor de degradación: Normal = 1, Conjured = 2
+        self.degradation_factor = 1
 
     def update(self):
         self.update_quality()
@@ -19,20 +22,19 @@ class ItemUpdater:
             self.handle_expired()
 
     def update_quality(self):
-        self._decrease_quality(1)
+        self._decrease_quality(self.degradation_factor)
 
     def update_sell_in(self):
         self.item.sell_in -= 1
 
     def handle_expired(self):
-        self._decrease_quality(1)
+        self._decrease_quality(self.degradation_factor)
 
-    def _increase_quality(self):
+    def _increase_quality(self, amount=1):
         if self.item.quality < 50:
-            self.item.quality += 1
+            self.item.quality = min(50, self.item.quality + amount)
 
     def _decrease_quality(self, amount):
-        """Resta calidad asegurando que no baje de 0."""
         self.item.quality = max(0, self.item.quality - amount)
 
 
@@ -46,7 +48,7 @@ class AgedBrieUpdater(ItemUpdater):
 
 class SulfurasUpdater(ItemUpdater):
     def update(self):
-        pass  # Sulfuras es inmutable
+        pass
 
 
 class BackstagePassUpdater(ItemUpdater):
@@ -62,12 +64,10 @@ class BackstagePassUpdater(ItemUpdater):
 
 
 class ConjuredItemUpdater(ItemUpdater):
-    """Degrada la calidad el doble de rápido que un ítem normal."""
-    def update_quality(self):
-        self._decrease_quality(2)
-
-    def handle_expired(self):
-        self._decrease_quality(2)
+    """Refactorizado: Solo cambia el factor, usa la lógica base."""
+    def __init__(self, item):
+        super().__init__(item)
+        self.degradation_factor = 2
 
 
 class NormalItemUpdater(ItemUpdater):
@@ -79,7 +79,7 @@ class UpdaterFactory:
         AGED_BRIE: AgedBrieUpdater,
         SULFURAS: SulfurasUpdater,
         BACKSTAGE_PASSES: BackstagePassUpdater,
-        CONJURED: ConjuredItemUpdater  # Registro de la nueva clase
+        CONJURED: ConjuredItemUpdater
     }
 
     @classmethod
