@@ -73,5 +73,24 @@ class GildedRoseTest(unittest.TestCase):
         GildedRose(items).update_quality()
         self.assertEqual(items[0].quality, 0)
 
+    
+    # --- 6. CONJURED ITEMS (LOS INVOCADOS) ---
+    def test_conjured_item_degrades_double_speed(self):
+        # Baja 2 en lugar de 1
+        items = [Item("Conjured Mana Cake", 10, 20)]
+        GildedRose(items).update_quality()
+        self.assertEqual(items[0].quality, 18)
+
+    def test_conjured_item_degrades_double_speed_after_sell_in(self):
+        # Baja 4 en lugar de 2 (el doble de un ítem normal caducado)
+        items = [Item("Conjured Mana Cake", 0, 20)]
+        GildedRose(items).update_quality()
+        self.assertEqual(items[0].quality, 16)
+
+    def test_conjured_item_quality_never_negative(self):
+        items = [Item("Conjured Mana Cake", 10, 1)]
+        GildedRose(items).update_quality()
+        self.assertEqual(items[0].quality, 0)
+
 if __name__ == "__main__":
     unittest.main()
